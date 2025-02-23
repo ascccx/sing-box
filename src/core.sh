@@ -116,7 +116,7 @@ get_uuid() {
 }
 
 get_ip() {
-    [[ $ip || $is_no_auto_tls || $is_gen ]] && return
+    [[ $ip || $is_no_auto_tls || $is_gen || $is_dont_get_ip ]] && return
     export "$(_wget -4 -qO- https://one.one.one.one/cdn-cgi/trace | grep ip=)" &>/dev/null
     [[ ! $ip ]] && export "$(_wget -6 -qO- https://one.one.one.one/cdn-cgi/trace | grep ip=)" &>/dev/null
     [[ ! $ip ]] && {
@@ -443,6 +443,7 @@ change() {
         [[ $is_auto_get_config ]] && msg "\n自动选择: $is_config_file"
     }
     is_old_net=$net
+    [[ $is_tcp_http ]] && net=http
     [[ $host ]] && net=$is_protocol-$net-tls
     [[ $is_reality && $net_type =~ 'http' ]] && net=rh2
 
@@ -634,6 +635,8 @@ change() {
 
 # delete config.
 del() {
+    # dont get ip
+    is_dont_get_ip=1
     [[ $is_conf_dir_empty ]] && return # not found any json file.
     # get a config file
     [[ ! $is_config_file ]] && get info $1
@@ -662,6 +665,7 @@ del() {
         warn "当前配置目录为空! 因为你刚刚删除了最后一个配置文件."
         is_conf_dir_empty=1
     fi
+    unset is_dont_get_ip
     [[ $is_dont_auto_exit ]] && unset is_config_file
 }
 
@@ -1290,6 +1294,7 @@ info() {
             [[ $net == "http" ]] && {
                 net=tcp
                 is_type=http
+                is_tcp_http=1
                 is_info_show+=(5)
                 is_info_str=(${is_info_str[@]/http/tcp http})
             }
